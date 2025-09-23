@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Igalia S.L.
+ * Copyright (C) 2025 Igalia S.L.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,38 +24,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "loader-private.h"
+#pragma once
 
-#include <stdlib.h>
+#if defined(WPE_ENABLE_ANDROID) && WPE_ENABLE_ANDROID
+#include <android/log.h>
 
-#include "logging-private.h"
+#define wpe_log(level, fmt, ...) __android_log_print(ANDROID_LOG_##level, "libwpe", (fmt), ##__VA_ARGS__)
 
-extern struct wpe_loader_interface _wpe_loader_interface;
-
-bool
-wpe_loader_init(const char* impl_library_name)
-{
-    return true;
-}
-
-const char*
-wpe_loader_get_loaded_implementation_library_name(void)
-{
-#ifdef WPE_BACKEND
-    return WPE_BACKEND;
 #else
-    return NULL;
-#endif
-}
+#include <stdio.h>
 
-void*
-wpe_load_object(const char* object_name)
-{
-    if (!_wpe_loader_interface.load_object) {
-        wpe_log_fatal(
-            "wpe_load_object: failed to load object with name '%s': backend doesn't implement load_object vfunc",
-            object_name);
-        abort();
-    }
-    return _wpe_loader_interface.load_object(object_name);
-}
+#define wpe_log(level, fmt, ...)                                          \
+    do {                                                                  \
+        fprintf(stderr, "libwpe [" #level "]: " fmt "\n", ##__VA_ARGS__); \
+        fflush(stderr);                                                   \
+    } while (0)
+
+#endif
+
+#define wpe_log_debug(fmt, ...)   wpe_log(DEBUG, fmt, ##__VA_ARGS__)
+#define wpe_log_warning(fmt, ...) wpe_log(WARN, fmt, ##__VA_ARGS__)
+#define wpe_log_error(fmt, ...)   wpe_log(ERROR, fmt, ##__VA_ARGS__)
+#define wpe_log_fatal(fmt, ...)   wpe_log(FATAL, fmt, ##__VA_ARGS__)
